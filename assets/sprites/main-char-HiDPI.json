@@ -1,0 +1,39 @@
+{"frames": {
+
+"Chick@2x.png":
+{
+	"frame": {"x":0,"y":0,"w":109,"h":100},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":109,"h":100},
+	"sourceSize": {"w":109,"h":100},
+	"anchor": {"x":0.5,"y":0.5}
+},
+"MotherBirdStandRight@2x.png":
+{
+	"frame": {"x":0,"y":133,"w":501,"h":387},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":501,"h":387},
+	"sourceSize": {"w":501,"h":387},
+	"anchor": {"x":0.5,"y":0.5}
+},
+"SingleEgg@2x.png":
+{
+	"frame": {"x":109,"y":0,"w":112,"h":133},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":112,"h":133},
+	"sourceSize": {"w":112,"h":133},
+	"anchor": {"x":0.5,"y":0.5}
+}},
+"meta": {
+	"app": "https://www.codeandweb.com/texturepacker",
+	"version": "1.0",
+	"image": "main-char-HiDPI.png",
+	"format": "RGBA8888",
+	"size": {"w":501,"h":520},
+	"scale": "1",
+	"smartupdate": "$TexturePacker:SmartUpdate:55b021a1c6db07ff0995d37c9b817422:1f70f8b48c9211664a1809aaa51d46e8:b4efb4d76d7562b7081f923eedfa8e52$"
+}
+}
