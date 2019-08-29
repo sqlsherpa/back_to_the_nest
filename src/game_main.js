@@ -9,7 +9,7 @@
 		};
 
 	//plugin constructor
-	function Game(element, option){
+	function Game(element, options){
 
 		this.element = element;
 		this.settings = $.extend({}, defaults, options);
@@ -33,9 +33,9 @@
 	});
 
 	//lightweight plugin wrapper around constructor 
-	//prevenging against multiple instantiations
+	//preventing against multiple instantiations
 
-	$ fn[ gameName ] = function( options ){
+	$.fn[ gameName ] = function( options ){
 
 		this.each(function() {
 				if (!$.data( this, "plugin_" + gameName)){
