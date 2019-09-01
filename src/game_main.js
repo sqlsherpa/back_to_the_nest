@@ -6,11 +6,13 @@ let { canvas } = init();
 
 //create a sprite object
 let sprite = Sprite({
-	x:100,
-	y: 50,
+	x:0,
+	y: 0,
 	width: 50,
 	height: 100,
-	color: 'green'
+	color: 'green',
+	dx:1,
+	dy:0.5
 });
 
 //game loop 60fps
