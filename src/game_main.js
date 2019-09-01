@@ -1,10 +1,11 @@
 
 
-kontra.init();//create the kontra object
+let {init, Sprite, GameLoop} = kontra //create the kontra objects
 
+let { canvas } = init();
 
 //create a sprite object
-var sprite = kontra.sprite({
+let sprite = Sprite({
 	x:100,
 	y: 50,
 	width: 50,
@@ -14,7 +15,7 @@ var sprite = kontra.sprite({
 
 //game loop 60fps
 
-var loop = kontra.gameLoop({
+let loop = GameLoop({
 	update: function(){
 		sprite.update();
 	},
