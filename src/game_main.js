@@ -5,17 +5,17 @@ let {init, Sprite, GameLoop} = kontra //create the kontra objects
 let { canvas } = init();
 
 
+//bring in an image
+let chickImg = new Image();
+chickImg.src = 'assets/sprites/chick.png';
 
-
-//create a sprite object
 let sprite = Sprite({
-	x:0,
-	y:0,
-	width: 50,
-	height: 100,
-	color: 'blue',
-	dx:2
-});
+		x:0,
+		y:0,
+		dx:2,
+		image: chickImg
+	});
+
 
 //game loop
 let loop = GameLoop({
