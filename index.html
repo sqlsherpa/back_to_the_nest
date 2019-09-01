@@ -7,12 +7,9 @@
 
 	<meta name="viewport" content="width=device-width, height=device-height, initial-scale = 1.0, maximum-scale = 1.0, user-scalable=0">
 
-	<link rel="stylesheet" href="style.css">
+	<link rel = "stylesheet" type = "text/css" href = "mystyle.css" />
 
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-
-	<script src="src/pixi.dev.js"></script>
-	<script src="src/game_main.js"></script>
+	
 
 </head>
 
@@ -20,13 +17,12 @@
 <html>
 	<body>
 		<div class="font-load">&nbsp;</div>
-		<div id="game"></div>
-		
-		<script>
-		$(document).ready(function(){
-			$('#game').backToTheNest();
-		});
-		
-		</script>
+		<canvas width ="256" height = "256" id="mainCanvas"> </canvas>
+		<div>
+			<div id="score" style="position:absolute: left: 10px: top: 10px; width:300px; height:25px: background-color: yellow;">Last Score:
+			</div>
+		</div>
+		<script src="lib/kontra.min.js"></script>
+		<script src="src/game_main.js"></script>
 	</body>
 </html>

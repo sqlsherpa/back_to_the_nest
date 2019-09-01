@@ -1,50 +1,27 @@
 
 
-;(function ( $, window, document, undefined){
+kontra.init();//create the kontra object
 
 
-	var gameName = 'backToTheNest',
-		defaults = {
-			canvasSize: {x:640,y:690}
-		};
+//create a sprite object
+var sprite = kontra.sprite({
+	x:100,
+	y: 50,
+	width: 50,
+	height: 100,
+	color: 'green'
+});
 
-	//plugin constructor
-	function Game(element, options){
+//game loop 60fps
 
-		this.element = element;
-		this.settings = $.extend({}, defaults, options);
-		this._defaults = defaults;
-		this._name = gameName;
-
-
-		//Initialize the game
-		this.init();
+var loop = kontra.gameLoop({
+	update: function(){
+		sprite.update();
+	},
+	render: function(){
+		sprite.render();
 	}
+})
 
-	//avoid game.prototype conflicts
-	$.extend(Game.prototype, {
 
-			init: function(){
-				this.aFunction();
-			},
-			aFunction:function(){
-				console.log('Game Initialized');
-			}
-	});
-
-	//lightweight plugin wrapper around constructor 
-	//preventing against multiple instantiations
-
-	$.fn[ gameName ] = function( options ){
-
-		this.each(function() {
-				if (!$.data( this, "plugin_" + gameName)){
-					 $.data( this, "plugin_" + gameName, new Game(this, options));
-				}
-		});
-
-		//chain jQuery functions
-		return this;
-	};
-
-})( jQuery, window, document);
+loop.start();

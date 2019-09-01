@@ -1,12 +1,17 @@
 @import url(http://fonts.googleapis.com/css?family=Amatic+SC:400,700);
 
-
-html,body{
-	padding:0;
-	margin:0;
+body{
+	background: black;
 }
-
+canvas{
+	background: white;
+	width: 100%;
+	max-width: 480px;
+	margin: auto;
+	display: block;
+}
 .font-load{
 	font-family: 'Amatic SC', cursive;
 	position:absolute;
+	color:white;
 }
