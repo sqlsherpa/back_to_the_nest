@@ -13,6 +13,7 @@ let sprite = Sprite({
 		x:0,
 		y:0,
 		dx:2,
+		dy:1,
 		image: chickImg
 	});
 
@@ -31,6 +32,10 @@ let loop = GameLoop({
 		if(((sprite.width + sprite.x) > canvas.width) || (sprite.x < 0))
 		{
 			sprite.dx = -sprite.dx
+		}
+		if(((sprite.height + sprite.y) > canvas.height) || (sprite.y < 0))
+		{
+			sprite.dy = -sprite.dy
 		}
 	},
 	render: function(){
