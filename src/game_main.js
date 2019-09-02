@@ -4,12 +4,14 @@ let {init, Sprite, GameLoop} = kontra //create the kontra objects
 
 let { canvas } = init();
 
+let canvasWidthMid = canvas.width/2;
+let canvasHeightMid = canvas.height/2;
 
 //bring in an image
 let chickImg = new Image();
 chickImg.src = 'assets/sprites/chick.png';
 
-let sprite = Sprite({
+let chickSprite = Sprite({
 		x:0,
 		y:0,
 		dx:2,
@@ -17,39 +19,53 @@ let sprite = Sprite({
 		image: chickImg
 	});
 
+let earthSprite = Sprite({
+		x:canvasWidthMid,
+		y:canvasHeightMid,
+		color: 'YellowGreen',
+		radius:50,
+		render: function(){
+			this.context.fillStyle = this.color;
+			this.context.beginPath();
+			this.context.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
+			this.context.fill();
+		}
+	});
 
 //game loop
 let loop = GameLoop({
 	update: function(){
-		sprite.update();
+		chickSprite.update();
+		earthSprite.update();
 
 		//wraps the sprite through the canvas x axis
-		// if(sprite.x > canvas.width){
-		// 	sprite.x = -sprite.width;
+		// if(chickSprite.x > canvas.width){
+		// 	chickSprite.x = -chickSprite.width;
 		// }
 
 		//bounces inside the canvas
-		// if(((sprite.width + sprite.x) > canvas.width) || (sprite.x < 0))
+		// if(((chickSprite.width + chickSprite.x) > canvas.width) || (chickSprite.x < 0))
 		// {
-		// 	sprite.dx = -sprite.dx
+		// 	chickSprite.dx = -chickSprite.dx
 		// }
-		// if(((sprite.height + sprite.y) > canvas.height) || (sprite.y < 0))
+		// if(((chickSprite.height + chickSprite.y) > canvas.height) || (chickSprite.y < 0))
 		// {
-		// 	sprite.dy = -sprite.dy
+		// 	chickSprite.dy = -chickSprite.dy
 		// }
 
 		//wraps the sprite through the canvas x and y axis
-		if(sprite.x > canvas.width){
-			sprite.x = -sprite.width;
+		if(chickSprite.x > canvas.width){
+			chickSprite.x = -chickSprite.width;
 		}
-		if(sprite.y > canvas.height){
-			sprite.y = -sprite.height;
+		if(chickSprite.y > canvas.height){
+			chickSprite.y = -chickSprite.height;
 		}
 
 
 	},
 	render: function(){
-		sprite.render();
+		chickSprite.render();
+		earthSprite.render();
 	}
 })
 
