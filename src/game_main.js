@@ -23,20 +23,30 @@ let loop = GameLoop({
 	update: function(){
 		sprite.update();
 
-		//wraps the sprite through the canvas
+		//wraps the sprite through the canvas x axis
 		// if(sprite.x > canvas.width){
 		// 	sprite.x = -sprite.width;
 		// }
 
 		//bounces inside the canvas
-		if(((sprite.width + sprite.x) > canvas.width) || (sprite.x < 0))
-		{
-			sprite.dx = -sprite.dx
+		// if(((sprite.width + sprite.x) > canvas.width) || (sprite.x < 0))
+		// {
+		// 	sprite.dx = -sprite.dx
+		// }
+		// if(((sprite.height + sprite.y) > canvas.height) || (sprite.y < 0))
+		// {
+		// 	sprite.dy = -sprite.dy
+		// }
+
+		//wraps the sprite through the canvas x and y axis
+		if(sprite.x > canvas.width){
+			sprite.x = -sprite.width;
 		}
-		if(((sprite.height + sprite.y) > canvas.height) || (sprite.y < 0))
-		{
-			sprite.dy = -sprite.dy
+		if(sprite.y > canvas.height){
+			sprite.y = -sprite.height;
 		}
+
+
 	},
 	render: function(){
 		sprite.render();
