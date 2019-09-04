@@ -5,8 +5,8 @@ let {init, setImagePath, load, on, imageAssets, TileEngine, Sprite, GameLoop} = 
 let { canvas } = init();
 
 //Setup the screen
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+canvas.width = 1600;//window.innerWidth;
+canvas.height = 1600;//window.innerHeight;
 
 let canvasWidthMid = canvas.width/2;
 let canvasHeightMid = canvas.height/2;
@@ -36,8 +36,8 @@ load(
 			tilewidth: 16,
 			tileheight: 16,
 			//map size in tiles
-			width:9,
-			height:9,
+			width:10,
+			height:10,
 			//tileset object
 			tilesets: [{
 				firstgid: 1,
@@ -46,15 +46,15 @@ load(
 			//layer object
 			layers:[{
 				name:'background',
-				data:[0,0,0,0,1,1,1,2,3,
-				      0,0,0,0,1,1,1,2,3,
-				      0,0,0,0,1,1,1,2,3,
-				      0,0,0,0,1,1,1,2,3,
-				      0,0,0,0,1,1,1,2,3,
-				      0,0,0,0,1,1,1,2,3,
-				      0,0,0,0,1,1,1,2,3,
-				      0,0,0,0,1,1,1,2,3,
-				      0,0,0,0,1,1,1,2,3]
+				data:[1,1,1,1,1,1,1,1,1,1,
+				      1,1,1,1,1,1,4,1,1,1,
+				      4,1,1,1,1,1,1,1,1,1,
+				      1,1,4,1,1,1,1,1,4,1,
+				      1,1,1,1,1,4,1,1,1,1,
+				      1,4,1,1,1,1,1,1,1,1,
+				      1,1,1,1,1,1,1,1,1,1,
+				      1,1,3,1,3,1,1,3,3,1,
+				      2,2,2,2,2,2,2,2,2,2]
 			}]
 		});
 
