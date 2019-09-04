@@ -1,6 +1,6 @@
 
 
-let {init, setImagePath, load, on, imageAssets, Sprite, GameLoop} = kontra //create the kontra objects
+let {init, setImagePath, load, on, imageAssets, TileEngine, Sprite, GameLoop} = kontra //create the kontra objects
 
 let { canvas } = init();
 
@@ -12,7 +12,7 @@ let canvasWidthMid = canvas.width/2;
 let canvasHeightMid = canvas.height/2;
 
 //bring in the assets
-let numAssets = 3;
+let numAssets = 4;
 let assetsLoaded = 0;
 on('assetLoaded', (asset,url) => {
 	assetsLoaded++;
@@ -20,14 +20,44 @@ on('assetLoaded', (asset,url) => {
 });
 
 setImagePath('assets/sprites');
+//asset load promise so the game starts only after all the assets are loaded..
 load(
 	'Chick.png',
 	'MotherBirdStandRight.png',
-	'EmptyNest.png'
+	'EmptyNest.png',
+	'BackToTheNestMap.png'
 	).then(function(assets){
 		console.log("All Assets Successfully Loaded.");
 
 		//Start assigning files to objects
+		let tileEngine = TileEngine({
+
+			// tile size
+			tilewidth: 16,
+			tileheight: 16,
+			//map size in tiles
+			width:9,
+			height:9,
+			//tileset object
+			tilesets: [{
+				firstgid: 1,
+				image: imageAssets['BackToTheNestMap']
+			}],
+			//layer object
+			layers:[{
+				name:'background',
+				data:[0,0,0,0,1,1,1,2,3,
+				      0,0,0,0,1,1,1,2,3,
+				      0,0,0,0,1,1,1,2,3,
+				      0,0,0,0,1,1,1,2,3,
+				      0,0,0,0,1,1,1,2,3,
+				      0,0,0,0,1,1,1,2,3,
+				      0,0,0,0,1,1,1,2,3,
+				      0,0,0,0,1,1,1,2,3,
+				      0,0,0,0,1,1,1,2,3]
+			}]
+		});
+
 		let chickSprite = Sprite({
 				x:0,
 				y:0,
@@ -50,6 +80,11 @@ load(
 				anchor: {x:.5,y:1},
 				image: imageAssets['EmptyNest']
 			});
+
+		//Create the platform
+		let platformSprite = Sprite({
+
+		});
 
 		//game loop
 		let loop = GameLoop({
@@ -89,6 +124,7 @@ load(
 				chickSprite.render();
 				motherBirdStandRightSprite.render();
 				emptyNestSprite.render();
+				tileEngine.render();
 			}
 		});
 
