@@ -5,14 +5,14 @@ let {init, setImagePath, load, on, imageAssets, TileEngine, Sprite, GameLoop} = 
 let { canvas } = init();
 
 //Setup the screen
-canvas.width = 1600;//window.innerWidth;
-canvas.height = 1600;//window.innerHeight;
+canvas.width = 640;
+canvas.height = 640;
 
 let canvasWidthMid = canvas.width/2;
 let canvasHeightMid = canvas.height/2;
 
 //bring in the assets
-let numAssets = 4;
+let numAssets = 3;
 let assetsLoaded = 0;
 on('assetLoaded', (asset,url) => {
 	assetsLoaded++;
@@ -23,8 +23,7 @@ setImagePath('assets/sprites');
 //asset load promise so the game starts only after all the assets are loaded..
 load(
 	'Chick.png',
-	'MotherBirdStandRight.png',
-	'EmptyNest.png',
+	'MotherBirdWorm.png',
 	'BackToTheNestMap.png'
 	).then(function(assets){
 		console.log("All Assets Successfully Loaded.");
@@ -33,8 +32,8 @@ load(
 		let tileEngine = TileEngine({
 
 			// tile size
-			tilewidth: 16,
-			tileheight: 16,
+			tilewidth: 64,
+			tileheight: 64,
 			//map size in tiles
 			width:10,
 			height:10,
@@ -47,13 +46,14 @@ load(
 			layers:[{
 				name:'background',
 				data:[1,1,1,1,1,1,1,1,1,1,
+				      1,1,1,1,1,1,1,1,1,1,
 				      1,1,1,1,1,1,4,1,1,1,
 				      4,1,1,1,1,1,1,1,1,1,
 				      1,1,4,1,1,1,1,1,4,1,
 				      1,1,1,1,1,4,1,1,1,1,
 				      1,4,1,1,1,1,1,1,1,1,
 				      1,1,1,1,1,1,1,1,1,1,
-				      1,1,3,1,3,1,1,3,3,1,
+				      1,6,1,1,3,1,5,3,3,1,
 				      2,2,2,2,2,2,2,2,2,2]
 			}]
 		});
@@ -66,42 +66,22 @@ load(
 				image: imageAssets['Chick']
 			});
 
-		let motherBirdStandRightSprite = Sprite({
+		let motherBird = Sprite({
 				x:200,
 				y:100,
 				dx:.75,
 				dy:.25,
-				image: imageAssets['MotherBirdStandRight']
+				image: imageAssets['MotherBirdWorm']
 			});
-
-		let emptyNestSprite = Sprite({
-				x:500 ,
-				y:500 ,
-				anchor: {x:.5,y:1},
-				image: imageAssets['EmptyNest']
-			});
-
-		//Create the platform
-		let platformSprite = Sprite({
-
-		});
 
 		//game loop
 		let loop = GameLoop({
 			update: function(){
-
-				//Full Screen resize update
-				canvas.width = window.innerWidth;
-				canvas.height = window.innerHeight;
-
-				//Derived sizes by screen
-				canvasWidthMid = canvas.width/2;
-				canvasHeightMid = canvas.height/2;
 				
 				//Sprite Updates
 				chickSprite.update();
-				motherBirdStandRightSprite.update();
-				emptyNestSprite.update();
+				motherBird.update();
+				
 
 				//wraps the sprite through the canvas x and y axis
 				if(chickSprite.x > canvas.width){
@@ -111,20 +91,21 @@ load(
 					chickSprite.y = -chickSprite.height;
 				}
 
-				if(motherBirdStandRightSprite.x > canvas.width){
-					motherBirdStandRightSprite.x = -motherBirdStandRightSprite.width;
+				if(motherBird.x > canvas.width){
+					motherBird.x = -motherBird.width;
 				}
-				if(motherBirdStandRightSprite.y > canvas.height){
-					motherBirdStandRightSprite.y = -motherBirdStandRightSprite.height;
+				if(motherBird.y > canvas.height){
+					motherBird.y = -motherBird.height;
 				}
 
 
 			},
 			render: function(){
-				chickSprite.render();
-				motherBirdStandRightSprite.render();
-				emptyNestSprite.render();
 				tileEngine.render();
+				chickSprite.render();
+				motherBird.render();
+				
+				
 			}
 		});
 
