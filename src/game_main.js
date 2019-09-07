@@ -190,13 +190,36 @@ load(
 				animations: motherBirdFlappingSheet.animations
 			});
 
-		let birdEnemy = Sprite({
+		var enemyBirdSwarm = [
+			Sprite({
 				x:enemyStartPositionX,
 				y:enemyStartPositionY,
 				dx: -enemySpeed,
 				dy: -enemySpeed,
 				animations: birdEnemyFlappingSheet.animations
-			});
+			}),
+			Sprite({
+				x:enemyStartPositionX + 10,
+				y:enemyStartPositionY + 10,
+				dx: -(enemySpeed + 2),
+				dy: -(enemySpeed + 4),
+				animations: birdEnemyFlappingSheet.animations
+			})
+
+		];
+
+		// let min = 5; 
+		// let max = 15;
+		// let rand = Math.random();
+		// let randomArrayLength = Math.floor(rand * (max - min + 1)) + min;
+		// let arr = [];
+
+		// for (int i = 0; i < randomArrayLength; i++){
+		// 	array.push(i)
+		// }
+
+		// document.write(randomArrayLength);
+		// document.write(array.length);
 
 		let worm = Sprite({
 				x:wormPositionX,
@@ -219,6 +242,11 @@ load(
 
 					if (testAnimations = 1){
 						playerDistanceFromNest = player.x - playerStartPositionX;
+						//launch the enemy animation
+						for (var i = 0, len = enemyBirdSwarm.length; i < len; i++){
+								enemyBirdSwarm[i].update();
+								enemyBirdSwarm[i].playAnimation('flapLeft');								
+						}
 
 						if(player.x >= playerStartPositionX && lapCount < 1){
 							player.dx = 1;
@@ -260,10 +288,6 @@ load(
 						{
 
 							player.dx = -1;
-
-							//launch the enemy animation
-							birdEnemy.update();
-							birdEnemy.playAnimation('flapLeft');
 
 							//play animations at equal intervals
 							if(playerDistanceFromNest < testDistanceInterval * 8){
@@ -357,7 +381,9 @@ load(
 				tileEngine.render();
 				chickSprite.render();
 				player.render();
-				birdEnemy.render();
+				for (var i = 0, len = enemyBirdSwarm.length; i < len; i++){
+					enemyBirdSwarm[i].render();
+				};
 				worm.render();
 				
 				
