@@ -5,10 +5,6 @@ let {init, initKeys, setImagePath, load, on, imageAssets, TileEngine,
 
 let { canvas } = init();
 
-//unit testing
-let isTesting = 1;
-let testAnimations = 1;
-
 //Setup the screen
 canvas.width = 640;
 canvas.height = 640;
@@ -25,6 +21,15 @@ on('assetLoaded', (asset,url) => {
 	assetsLoaded++;
 	console.log("#" + assetsLoaded + " asset loaded");
 });
+
+//special functions
+function sphereCollision(object){
+  let dx = this.x - object.x;
+  let dy = this.y - object.y;
+  let distance = Math.sqrt(dx * dx + dy * dy);
+
+  return distance < this.radius + object.radius;
+}
 
 setImagePath('assets/sprites');
 //asset load promise so the game starts only after all the assets are loaded..
@@ -67,13 +72,7 @@ load(
 			}]
 		});
 
-		let chickSprite = Sprite({
-				x:100,
-				y:448,
-				image: imageAssets['Chick']
-			});
-
-		
+		//Sprite sheets for animations ///////////////////////////////////////////////////////
 		let motherBirdFlappingSheet = SpriteSheet({
 			image: imageAssets['MotherBirdFullSpriteSheet'],
 			frameWidth: 64,
@@ -167,224 +166,181 @@ load(
 			}
 		});
 
+		//Settings ///////////////////////////////////////////////////////////////////////////
 		//player settings
-		let playerSpeed = 6
+		let playerSpeed = 3.5
 		let playerStartPositionX = 64
 		let playerStartPositionY = 448
 		let lapCount = 0
 		let playerDistanceFromNest = 0
 		let testDistanceInterval = (500 - playerStartPositionX) / 8
+		let playerHasWorm = 0
+		let gravity = .05
 
 		//enemy settings
 		let enemySpeed = 1
-		let enemyStartPositionX = canvas.width;
-		let enemyStartPositionY = canvas.height;
+		let enemyStartPositionX = canvas.width + 30;
 
 		//worm settings
-		let wormPositionX = 320
+		let wormPositionX = 576
 		let wormPositionY = 512
 
+		//Swarm Initial settings
+		let enemyBirdMin = 1; 
+		let enemyBirdMax = 3;
+		let enemyBirdVectorXMin = -3.12;
+		let enemyBirdVectorXMax = -5.23;
+		let enemyBirdVectorYMin = 4.12;
+		let enemyBirdVectorYMax = 6.23;
+		let swoopRadians = 0;
+		let rand = Math.random();
+		let randomSwarmSize = Math.floor(rand * (enemyBirdMax - enemyBirdMin + 1)) + enemyBirdMin; //Random between the min and max but ensuring at least the min.
+		let enemyBirdSwarmArray = [];
+
+		
+
+		//Initialize sprites/////////////////////////////////////////////////////////////////
+		//Player Mother Bird Sprite
 		let player = Sprite({
 				x:playerStartPositionX,
 				y:playerStartPositionY,
+				ddy:gravity,
+				anchor: {x: 0.5, y: 0.5},
+				radius: 17,
+				collidesWith: sphereCollision,
 				animations: motherBirdFlappingSheet.animations
 			});
 
-		var enemyBirdSwarm = [
-			Sprite({
-				x:enemyStartPositionX,
-				y:enemyStartPositionY,
-				dx: -enemySpeed,
-				dy: -enemySpeed,
+		//Enemy Bird Sprites
+		for (var i = 0; i < randomSwarmSize; i++){
+			rand = Math.random();
+			let birdSpawnX = canvas.width;
+			let birdSpawnY = Math.floor(rand * (canvasHeightMid - (canvasHeightMid*1.5))) - canvasHeightMid; //random above and to the right
+
+			rand = Math.random();
+			let randomSpeedX = Math.floor(rand * (enemyBirdVectorXMax - enemyBirdVectorXMin + i)) + enemyBirdVectorXMin;
+
+			rand = Math.random();
+			let randomSpeedY = Math.floor(rand * (enemyBirdVectorYMax - enemyBirdVectorYMin + i)) + enemyBirdVectorYMin;
+
+			console.log("Slot: " + i + " speedx: " + randomSpeedX + " speedy: " + randomSpeedY + " yspawn "+ birdSpawnY);
+			let enemyBird = Sprite({
+				x:birdSpawnX,
+				y:canvasHeightMid,
+				dx: randomSpeedX,
+				dy: randomSpeedY,
+				radius: 5,
+				anchor: {x: 0.5, y: 0.5},
+				collidesWith: sphereCollision,
 				animations: birdEnemyFlappingSheet.animations
-			}),
-			Sprite({
-				x:enemyStartPositionX + 10,
-				y:enemyStartPositionY + 10,
-				dx: -(enemySpeed + 2),
-				dy: -(enemySpeed + 4),
-				animations: birdEnemyFlappingSheet.animations
-			})
+			});
+			enemyBirdSwarmArray.push(enemyBird)
+		}
 
-		];
+		//Chick Sprite
+		let chickSprite = Sprite({
+				x:100,
+				y:448,
+				radius: 2,
+				anchor: {x: 0.5, y: 0.5},
+				collidesWith: sphereCollision,
+				image: imageAssets['Chick']
+			});
 
-		// let min = 5; 
-		// let max = 15;
-		// let rand = Math.random();
-		// let randomArrayLength = Math.floor(rand * (max - min + 1)) + min;
-		// let arr = [];
-
-		// for (int i = 0; i < randomArrayLength; i++){
-		// 	array.push(i)
-		// }
-
-		// document.write(randomArrayLength);
-		// document.write(array.length);
-
+		//Worm Sprite
 		let worm = Sprite({
 				x:wormPositionX,
 				y:wormPositionY,
+				radius: 20,
+				anchor: {x: 0.5, y: 1},
+				collidesWith: sphereCollision,
 				animations: wormSpriteSheet.animations
 			});
 
-		//game loop
+////////////////////////////////////////////////////////////////////////////////////////////
+//											game loop
+////////////////////////////////////////////////////////////////////////////////////////////
 		let loop = GameLoop({
 			update: function(){
 				
-				//Sprite Updates
-				chickSprite.update();
-				player.update();
-				worm.update();
+				//Player Logic ////////////////////////////////////////////
 				player.playAnimation('idleRight'); //default animation
+				playerDistanceFromNest = player.x - playerStartPositionX; //update the distance from the nest
 
-				//Unit Tests
-				if(isTesting = 1){
+				if(playerDistanceFromNest < 0){
+					loop.stop();
+				}
 
-					if (testAnimations = 1){
-						playerDistanceFromNest = player.x - playerStartPositionX;
-						//launch the enemy animation
-						for (var i = 0, len = enemyBirdSwarm.length; i < len; i++){
-								enemyBirdSwarm[i].update();
-								enemyBirdSwarm[i].playAnimation('flapLeft');								
-						}
+				if(player.x > worm.x){
+					playerHasWorm = 1
+				}
+				//Auto dx toward worm, once worm is obtained, auto -dx
+				if(playerHasWorm == 0){
+					player.dx = playerSpeed;
+					player.playAnimation('glideRight');
+				}
+				else{
+					player.dx = -playerSpeed;
+					player.playAnimation('glideWormLeft');
+				}
 
-						if(player.x >= playerStartPositionX && lapCount < 1){
-							player.dx = 1;
-							
-							//play animations at equal intervals
-							if(playerDistanceFromNest > testDistanceInterval * 0){
-								player.playAnimation('idleRight');
-							}
-							if(playerDistanceFromNest > testDistanceInterval * 1){
-								player.playAnimation('flapRight');
-							}
-							if(playerDistanceFromNest > testDistanceInterval * 2){
-								player.playAnimation('hopRight');
-							}
-							if(playerDistanceFromNest > testDistanceInterval * 3){
-								player.playAnimation('glideRight');
-							}
+				//Spacebar or right click to flap upward
+				if (keyPressed('space')){
+					player.ddy = -gravity;
 
-							if(playerDistanceFromNest > testDistanceInterval * 4){
-								player.playAnimation('idleWormRight');
-							}
-							if(playerDistanceFromNest > testDistanceInterval * 5){
-								player.playAnimation('flapWormRight');
-							}
-							if(playerDistanceFromNest > testDistanceInterval * 6){
-								player.playAnimation('hopWormRight');
-							}
-							if(playerDistanceFromNest > testDistanceInterval * 7){
-								player.playAnimation('glideWormRight');
-							}
-							
-							//turn around
-							if (playerDistanceFromNest > 500){
-								lapCount += 1;
-							}
-							console.log("Player Distance: " + playerDistanceFromNest)
-						}
-						if(lapCount > 0 )
-						{
-
-							player.dx = -1;
-
-							//play animations at equal intervals
-							if(playerDistanceFromNest < testDistanceInterval * 8){
-								player.playAnimation('idleLeft');
-							}
-							if(playerDistanceFromNest < testDistanceInterval * 7){
-								player.playAnimation('flapLeft');
-							}
-							if(playerDistanceFromNest < testDistanceInterval * 6){
-								player.playAnimation('hopLeft');
-							}
-							if(playerDistanceFromNest < testDistanceInterval * 5){
-								player.playAnimation('glideLeft');
-							}
-
-							if(playerDistanceFromNest < testDistanceInterval * 4){
-								player.playAnimation('idleWormLeft');
-							}
-							if(playerDistanceFromNest < testDistanceInterval * 3){
-								player.playAnimation('flapWormLeft');
-							}
-							if(playerDistanceFromNest < testDistanceInterval * 2){
-								player.playAnimation('hopWormLeft');
-							}
-							if(playerDistanceFromNest < testDistanceInterval * 1){
-								player.playAnimation('glideWormLeft');
-							}
-							//stop the loop
-							if (player.x < playerStartPositionX){
-								loop.stop();
-							}
-							console.log("Player Distance: " + playerDistanceFromNest)
-						}
-					}
-				}else
-				{
-					//Player movements
-					if (keyPressed('w')){
-						player.y += -playerSpeed;
-						player.playAnimation('glideRight');
-					}
-					if (keyPressed('s')){
-						player.y += playerSpeed;
-						player.playAnimation('glideLeft');
-					}
-					if (keyPressed('a')){
-						player.x += -playerSpeed;
-						player.playAnimation('flapLeft');
-					}
-					if (keyPressed('d')){
-						player.x += playerSpeed;
-						player.playAnimation('flapRight');
-					}
-					if (keyPressed('h')){
-						player.playAnimation('idleWormRight');
-					}
-					if (keyPressed('g')){
-						player.playAnimation('idleWormLeft');
-					}
-
-					// worm test on arrows
-					if (keyPressed('up')){
-						player.y += -playerSpeed;
-						player.playAnimation('glideWormRight');
-					}
-					if (keyPressed('down')){
-						player.y += playerSpeed;
-						player.playAnimation('glideWormLeft');
-					}
-					if (keyPressed('left')){
-						player.x += -playerSpeed;
+					if(playerHasWorm == 1){
 						player.playAnimation('flapWormLeft');
 					}
-					if (keyPressed('right')){
-						player.x += playerSpeed;
-						player.playAnimation('flapWormRight');
+					else{
+						player.playAnimation('flapRight');
 					}
+				}else{
+					player.ddy = gravity;
+				}
 
-					//hop test
-					if (keyPressed('j')){
-						player.x += -playerSpeed;
-						player.playAnimation('hopWormLeft');
-					}
-					if (keyPressed('k')){
-						player.x += playerSpeed;
-						player.playAnimation('hopWormRight');
+				
+				player.update();
+
+				//Enemy Logic //////////////////////////////////////////////////////////////
+				//Enemy birds
+				if (playerHasWorm == 1){
+					for (var i = 0; i < enemyBirdSwarmArray.length; i++){
+
+						swoopRadians += .0125
+						enemyBirdSwarmArray[i].y = canvasHeightMid + ((canvas.height/4 + player.y/20) * Math.sin(swoopRadians));
+						// if (enemyBirdSwarmArray[i].y < (canvasHeightMid - 200)){
+						// 	enemyBirdSwarmArray[i].y = 10 * Math.sin(swoopRadians);
+						// }else if (enemyBirdSwarmArray[i].y > (canvasHeightMid + 200)){
+						// 	enemyBirdSwarmArray[i].y = 10 * -Math.sin(swoopRadians);
+						// }
+						enemyBirdSwarmArray[i].update();
+						enemyBirdSwarmArray[i].playAnimation('flapLeft');
+						//Collision detection
+						if(enemyBirdSwarmArray[i].collidesWith(player)){
+							loop.stop();
+						}								
 					}
 				}
+
+				//Simple sprite Updates
+				chickSprite.update();
+				worm.update();
+				
 			},
 			render: function(){
 				tileEngine.render();
 				chickSprite.render();
 				player.render();
-				for (var i = 0, len = enemyBirdSwarm.length; i < len; i++){
-					enemyBirdSwarm[i].render();
+
+				for (var i = 0; i < enemyBirdSwarmArray.length; i++){
+					enemyBirdSwarmArray[i].render();
 				};
-				worm.render();
+
+				//Render the worm until the player has it.
+				if (playerHasWorm == 0){
+					worm.render();
+				}
+				
 				
 				
 			}
