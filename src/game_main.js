@@ -31,6 +31,9 @@ function sphereCollision(object){
   return distance < this.radius + object.radius;
 }
 
+//Object management
+let sprites = [];
+
 setImagePath('assets/sprites');
 //asset load promise so the game starts only after all the assets are loaded..
 load(
@@ -49,7 +52,7 @@ load(
 			tilewidth: 64,
 			tileheight: 64,
 			//map size in tiles
-			width:10,
+			width:14,
 			height:10,
 			//tileset object
 			tilesets: [{
@@ -58,17 +61,31 @@ load(
 			}],
 			//layer object
 			layers:[{
+				name:'collision',
+				data:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+					  0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+					  0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+					  0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+					  0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+					  0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+					  0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+					  0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+					  0,0,0,0,0,0,5,3,3,0,0,0,0,0,
+					  2,2,2,2,2,2,2,2,2,2,2,2,2,2]
+				},
+				{
 				name:'background',
-				data:[1,1,1,1,1,1,1,1,1,1,
-				      1,1,1,1,1,1,1,1,1,1,
-				      1,1,1,1,1,1,4,1,1,1,
-				      4,1,1,1,1,1,1,1,1,1,
-				      1,1,4,1,1,1,1,1,4,1,
-				      1,1,1,1,1,4,1,1,1,1,
-				      1,4,1,1,1,1,1,1,1,1,
-				      1,1,1,1,1,1,1,1,1,1,
-				      1,6,1,1,3,1,5,3,3,1,
-				      2,2,2,2,2,2,2,2,2,2]
+				data:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+					  1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+					  1,1,1,1,1,1,4,1,1,1,1,1,1,1,
+					  4,1,1,1,1,1,1,1,1,1,1,1,1,1,
+					  1,1,4,1,1,1,1,1,4,1,1,1,1,1,
+					  1,1,1,1,1,4,1,1,1,1,1,1,1,1,
+					  1,4,1,1,1,1,1,1,1,1,1,1,1,1,
+					  1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+					  1,6,1,1,3,1,5,3,3,1,1,1,1,1,
+					  2,2,2,2,2,2,2,2,2,2,2,2,2,2]
+				
 			}]
 		});
 
@@ -169,8 +186,8 @@ load(
 		//Settings ///////////////////////////////////////////////////////////////////////////
 		//player settings
 		let playerSpeed = 3.5
-		let playerStartPositionX = 64
-		let playerStartPositionY = 448
+		let playerStartPositionX = 96
+		let playerStartPositionY = 478
 		let lapCount = 0
 		let playerDistanceFromNest = 0
 		let testDistanceInterval = (500 - playerStartPositionX) / 8
@@ -195,7 +212,7 @@ load(
 		let swoopRadians = 0;
 		let rand = Math.random();
 		let randomSwarmSize = Math.floor(rand * (enemyBirdMax - enemyBirdMin + 1)) + enemyBirdMin; //Random between the min and max but ensuring at least the min.
-		let enemyBirdSwarmArray = [];
+		let enemyBirdSwarmSprites = [];
 
 		
 
@@ -204,12 +221,15 @@ load(
 		let player = Sprite({
 				x:playerStartPositionX,
 				y:playerStartPositionY,
+				width: 64,
+				height:64,
 				ddy:gravity,
 				anchor: {x: 0.5, y: 0.5},
 				radius: 17,
 				collidesWith: sphereCollision,
 				animations: motherBirdFlappingSheet.animations
 			});
+		sprites.push(player);
 
 		//Enemy Bird Sprites
 		for (var i = 0; i < randomSwarmSize; i++){
@@ -233,8 +253,9 @@ load(
 				collidesWith: sphereCollision,
 				animations: birdEnemyFlappingSheet.animations
 			});
-			enemyBirdSwarmArray.push(enemyBird)
+			enemyBirdSwarmSprites.push(enemyBird)
 		}
+		
 
 		//Chick Sprite
 		let chickSprite = Sprite({
@@ -245,6 +266,7 @@ load(
 				collidesWith: sphereCollision,
 				image: imageAssets['Chick']
 			});
+		sprites.push(chickSprite);
 
 		//Worm Sprite
 		let worm = Sprite({
@@ -255,6 +277,15 @@ load(
 				collidesWith: sphereCollision,
 				animations: wormSpriteSheet.animations
 			});
+		sprites.push(worm);
+
+		//Add the sprites to the tile map so the camera and the tilemap are synced
+		for (var i = 0; i < sprites.length; i ++){
+			tileEngine.addObject(sprites[i]);
+		}
+		for (var i = 0; i < enemyBirdSwarmSprites.length; i ++){
+			tileEngine.addObject(enemyBirdSwarmSprites[i]);
+		}
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //											game loop
@@ -262,8 +293,23 @@ load(
 		let loop = GameLoop({
 			update: function(){
 				
+				//update all living sprites -- dead ones are filtered at the end of this loop
+				sprites.map(sprite => {
+						sprite.update()
+				});
+
+				//tileEngine testing
+				if(player.x >= canvasWidthMid){
+					tileEngine.sx += playerSpeed;
+				}else if (playerHasWorm == 1) {
+					tileEngine.sx -= playerSpeed;
+				}
+
 				//Player Logic ////////////////////////////////////////////
-				player.playAnimation('idleRight'); //default animation
+				if (tileEngine.layerCollidesWith('collision',player)){
+					loop.stop();
+				}
+
 				playerDistanceFromNest = player.x - playerStartPositionX; //update the distance from the nest
 
 				if(playerDistanceFromNest < 0){
@@ -272,6 +318,8 @@ load(
 
 				if(player.x > worm.x){
 					playerHasWorm = 1
+					worm.ttl = 0;
+					tileEngine.removeObject('worm');
 				}
 				//Auto dx toward worm, once worm is obtained, auto -dx
 				if(playerHasWorm == 0){
@@ -297,51 +345,35 @@ load(
 					player.ddy = gravity;
 				}
 
-				
-				player.update();
 
 				//Enemy Logic //////////////////////////////////////////////////////////////
 				//Enemy birds
 				if (playerHasWorm == 1){
-					for (var i = 0; i < enemyBirdSwarmArray.length; i++){
+					for (var i = 0; i < enemyBirdSwarmSprites.length; i++){
 
 						swoopRadians += .0125
-						enemyBirdSwarmArray[i].y = canvasHeightMid + ((canvas.height/4 + player.y/20) * Math.sin(swoopRadians));
-						// if (enemyBirdSwarmArray[i].y < (canvasHeightMid - 200)){
-						// 	enemyBirdSwarmArray[i].y = 10 * Math.sin(swoopRadians);
-						// }else if (enemyBirdSwarmArray[i].y > (canvasHeightMid + 200)){
-						// 	enemyBirdSwarmArray[i].y = 10 * -Math.sin(swoopRadians);
-						// }
-						enemyBirdSwarmArray[i].update();
-						enemyBirdSwarmArray[i].playAnimation('flapLeft');
+						enemyBirdSwarmSprites[i].y = canvasHeightMid + ((canvas.height/4 + player.y/20) * Math.sin(swoopRadians));
+						enemyBirdSwarmSprites[i].update();
+						enemyBirdSwarmSprites[i].playAnimation('flapLeft');
 						//Collision detection
-						if(enemyBirdSwarmArray[i].collidesWith(player)){
+						if(enemyBirdSwarmSprites[i].collidesWith(player)){
 							loop.stop();
 						}								
 					}
 				}
 
-				//Simple sprite Updates
-				chickSprite.update();
-				worm.update();
-				
+				sprites = sprites.filter(sprite => sprite.isAlive());
 			},
 			render: function(){
-				tileEngine.render();
-				chickSprite.render();
-				player.render();
+				tileEngine.renderLayer('background');
+				sprites.map(sprite => sprite.render()); //render each sprite
 
-				for (var i = 0; i < enemyBirdSwarmArray.length; i++){
-					enemyBirdSwarmArray[i].render();
-				};
-
-				//Render the worm until the player has it.
-				if (playerHasWorm == 0){
-					worm.render();
+				if(playerHasWorm == 1){
+					for (var i = 0; i < enemyBirdSwarmSprites.length; i++){
+						enemyBirdSwarmSprites[i].render();
+					}
 				}
-				
-				
-				
+						
 			}
 		});
 
