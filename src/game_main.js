@@ -179,7 +179,7 @@ load(
 
 		//enemy settings
 		let enemySpeed = 1
-		let enemyStartPositionX = canvas.width + 30;
+		let enemyStartPositionX = canvas.width + 100;
 
 		//worm settings
 		let wormPositionX = 576
@@ -214,7 +214,6 @@ load(
 		//Enemy Bird Sprites
 		for (var i = 0; i < randomSwarmSize; i++){
 			rand = Math.random();
-			let birdSpawnX = canvas.width;
 			let birdSpawnY = Math.floor(rand * (canvasHeightMid - (canvasHeightMid*1.5))) - canvasHeightMid; //random above and to the right
 
 			rand = Math.random();
@@ -225,7 +224,7 @@ load(
 
 			console.log("Slot: " + i + " speedx: " + randomSpeedX + " speedy: " + randomSpeedY + " yspawn "+ birdSpawnY);
 			let enemyBird = Sprite({
-				x:birdSpawnX,
+				x:enemyStartPositionX,
 				y:canvasHeightMid,
 				dx: randomSpeedX,
 				dy: randomSpeedY,
