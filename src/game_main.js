@@ -15,7 +15,7 @@ let canvasHeightMid = canvas.height/2;
 initKeys();
 
 //bring in the assets
-let numAssets = 5;
+let numAssets = 6;
 let assetsLoaded = 0;
 on('assetLoaded', (asset,url) => {
 	assetsLoaded++;
@@ -32,7 +32,8 @@ load(
 	'BackToTheNestMap.png',
 	'MotherBirdFullSpriteSheet.png',
 	'BirdEnemyFullSpriteSheet.png',
-	'WormFullSpriteSheet.png'
+	'WormFullSpriteSheet.png',
+	'Egg.png'
 	).then(function(assets){
 		console.log("All Assets Successfully Loaded.");
 
@@ -216,6 +217,38 @@ load(
 			});
 		sprites.push(worm);
 
+		let egg4 = Sprite({
+				x:87,
+				y:475,
+				image: imageAssets['Egg'],
+				anchor: {x: 0.5, y: 0.5}
+			});
+		sprites.push(egg4);
+
+		let egg = Sprite({
+				x:80,
+				y:485,
+				image: imageAssets['Egg'],
+				anchor: {x: 0.5, y: 0.5}
+			});
+		sprites.push(egg);
+
+		let egg2 = Sprite({
+				x:85,
+				y:485,
+				image: imageAssets['Egg'],
+				anchor: {x: 0.5, y: 0.5}
+			});
+		sprites.push(egg2);
+
+		let egg3 = Sprite({
+				x:90,
+				y:485,
+				image: imageAssets['Egg'],
+				anchor: {x: 0.5, y: 0.5}
+			});
+		sprites.push(egg3);
+
 		//Player Mother Bird Sprite
 		let player = Sprite({
 				x:playerStartPositionX,
@@ -378,8 +411,6 @@ load(
 						default: 
 						this.playAnimation('glideRight');
 					}
-					
-					console.log(this.playerState);
 					this.advance();
 				}
 			});
@@ -413,7 +444,7 @@ load(
 		//Chick Sprite
 		let chickSprite = Sprite({
 				x:120,
-				y:478,
+				y:485,
 				radius: 2,
 				anchor: {x: 0.5, y: 0.5},
 				collidesWith: sphereCollision,
