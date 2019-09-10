@@ -1,9 +1,9 @@
 
 
 let {init, initKeys, setImagePath, load, on, imageAssets, TileEngine, 
-     Sprite, SpriteSheet, Animation, keyPressed, GameLoop} = kontra //create kontra objects
+     Sprite, SpriteSheet, Animation, keyPressed, Context, GameLoop} = kontra //create kontra objects
 
-let { canvas } = init();
+let { canvas, context} = init();
 
 //Setup the screen
 canvas.width = 640;
@@ -300,11 +300,6 @@ load(
 						this.dx = 0 // halt forward movement.
 					}
 
-					if(this.distanceFromNest == 0 && playerHasWorm == 1)
-					{
-						loop.stop();
-					}
-
 					//move player toward worm until obtained and then go back to the nest.
 					if(playerHasWorm == 0 && this.hasForwardCollision == 0){
 						moveToWorm(player,worm);
@@ -503,9 +498,22 @@ load(
 						enemyBirdSwarmSprites[i].playAnimation('flapLeft');
 						//Collision detection
 						if(enemyBirdSwarmSprites[i].collidesWith(player)){
-							loop.stop();
+							loop.stop(); // knock an egg off the nest
 						}								
 					}
+				}
+
+				if(this.distanceFromNest <= 0 && playerHasWorm == 1)
+				{
+					//increment egg count
+					
+					//drop the worm
+					playerHasWorm = 0;
+
+					//Reposition the worm
+					worm.ttl = 20000
+					tileEngine.addObject('worm');
+
 				}
 
 				sprites = sprites.filter(sprite => sprite.isAlive());
@@ -519,6 +527,16 @@ load(
 						enemyBirdSwarmSprites[i].render();
 					}
 				}
+
+				context.font = "30px Verdana";
+				// Create gradient
+				var gradient = context.createLinearGradient(0, canvas.width/4, canvas.width/2, 0);
+				gradient.addColorStop("0"," magenta");
+				gradient.addColorStop("0.5", "blue");
+				gradient.addColorStop("1.0", "red");
+				// Fill with gradient
+				context.fillStyle = gradient;
+				context.fillText("Hit spacebar to flap your wings and bring the worm back to the nest!", 0, canvas.height/2);
 						
 			}
 		});
@@ -558,15 +576,13 @@ function moveToWorm(player, worm){
 
 function moveToNest(player){
 	//Distance to nest
-	if (player.distanceFromNest == 0){
+	if (player.distanceFromNest <= 0){
 		player.dx = 0; //stop travelling
 		return;
 	}else{
 		
 		if(player.distanceFromNest > 0){
 			player.dx = -player.playerSpeed;
-		}else{
-			player.dx = player.playerSpeed;
 		}
 		return;
 	}
