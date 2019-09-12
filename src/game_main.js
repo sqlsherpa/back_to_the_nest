@@ -182,28 +182,18 @@ load(
 		let playerHasWorm = 0;
 		let gravity = .05;
 		let floor = 576;
-
-		//enemy properties
-		let enemySpeed = 1;
-		let enemyStartPositionX = tileEngine.mapwidth;
+		let eggCountRunning = 0;
+		let eggCountCurrent = 1;
+		let spacebarUsed = 0;
 
 		//worm properties
 		let wormPositionX = 800;
 		let wormPositionY = 576;
 
 		//Swarm properties
-		let enemyBirdMin = 1; 
-		let enemyBirdMax = 3;
-		let enemyBirdVectorXMin = -3.12;
-		let enemyBirdVectorXMax = -5.23;
-		let enemyBirdVectorYMin = 4.12;
-		let enemyBirdVectorYMax = 6.23;
 		let swoopRadians = 0;
-		let rand = Math.random();
-		let randomSwarmSize = Math.floor(rand * (enemyBirdMax - enemyBirdMin + 1)) + enemyBirdMin; //Random between the min and max but ensuring at least the min.
+		let swarmSize = 1; //This is the starting bird, but this will increase as the worm distance increases.
 		let enemyBirdSwarmSprites = [];
-
-		
 
 		//Initialize sprites/////////////////////////////////////////////////////////////////
 		//Worm Sprite
@@ -266,6 +256,7 @@ load(
 				hasCollision: 0,
 				distanceFromNest: 0,
 				playerSpeed: 3.5,
+				isVulnerable:1,
 				update(){
 					this.distanceFromNest = this.x - playerStartPositionX; //update the distance from the nest
 					
@@ -314,8 +305,8 @@ load(
 						//Upward movement
 						this.y -= 5 //Boost upward
 						this.ddy = -gravity; //Reverse gravity
-
-
+						spacebarUsed = 1;
+						
 						//flap toward worm
 						if (this.hasForwardCollision == 0 && playerHasWorm == 0){
 							moveToWorm(player,worm);
@@ -339,7 +330,7 @@ load(
 					}
 
 					//player hopping along ground, set gravity to zero
-					if(this.y > (floor - 36)) //36 to adjust for foot position of sprite
+					if(this.y > (floor - 36) && keyPressed('space') == false) //36 to adjust for foot position of sprite
 					{
 						this.y = (floor - 36);
 						this.ddy = 0;
@@ -351,6 +342,12 @@ load(
 							}
 					}
 
+					//celing boundary
+					if(this.y < 0)
+					{
+						this.y = 0;
+					}
+					
 					//Determine animation to play
 					switch(this.playerState){
 						case 'IdleRight':
@@ -412,30 +409,8 @@ load(
 		sprites.push(player);
 
 		//Enemy Bird Sprites
-		for (var i = 0; i < randomSwarmSize; i++){
-			rand = Math.random();
-			let birdSpawnY = Math.floor(rand * (canvasHeightMid - (canvasHeightMid*1.5))) - canvasHeightMid; //random above and to the right
-
-			rand = Math.random();
-			let randomSpeedX = Math.floor(rand * (enemyBirdVectorXMax - enemyBirdVectorXMin + i)) + enemyBirdVectorXMin;
-
-			rand = Math.random();
-			let randomSpeedY = Math.floor(rand * (enemyBirdVectorYMax - enemyBirdVectorYMin + i)) + enemyBirdVectorYMin;
-
-			let enemyBird = Sprite({
-				x:enemyStartPositionX,
-				y:canvasHeightMid,
-				dx: randomSpeedX,
-				dy: randomSpeedY,
-				radius: 5,
-				anchor: {x: 0.5, y: 0.5},
-				collidesWith: sphereCollision,
-				animations: birdEnemyFlappingSheet.animations
-			});
-			enemyBirdSwarmSprites.push(enemyBird)
-		}
-		
-
+		spawnEnemyBirds(swarmSize + eggCountRunning, tileEngine, birdEnemyFlappingSheet, enemyBirdSwarmSprites);
+	
 		//Chick Sprite
 		let chickSprite = Sprite({
 				x:120,
@@ -473,23 +448,17 @@ load(
 					tileEngine.sx -= player.playerSpeed;
 				}
 
-				
-					
-
-				// 	console.log("tile ahead: " + tileEngine.tileAtLayer('collision', {x: (player.x + 64), y: player.y}) + " tileEngine:height " + tileEngine.mapheight);
-				// 	console.log("tile below: " + tileEngine.tileAtLayer('collision', {x: player.x, y: player.y + 64}));
-					
-				// }
-
 				if(worm.collidesWith(player)){
 					playerHasWorm = 1
 					worm.ttl = 0;
-					tileEngine.removeObject('worm');
+					spawnEnemyBirds(swarmSize + eggCountRunning, tileEngine, birdEnemyFlappingSheet, enemyBirdSwarmSprites);
 				}
 				
 				//Enemy Logic //////////////////////////////////////////////////////////////
 				//Enemy birds
 				if (playerHasWorm == 1){
+					
+
 					for (var i = 0; i < enemyBirdSwarmSprites.length; i++){
 
 						swoopRadians += .0125
@@ -498,25 +467,40 @@ load(
 						enemyBirdSwarmSprites[i].playAnimation('flapLeft');
 						//Collision detection
 						if(enemyBirdSwarmSprites[i].collidesWith(player)){
-							loop.stop(); // knock an egg off the nest
-						}								
+							if (eggCountCurrent > 0 && player.isVulnerable == 1){
+								eggCountCurrent -= 1; // knock an egg off the nest
+								player.isVulnerable = 0;
+								setTimeout(makePlayerVulnerable(player),3000); //player is invulnerable for 3 seconds
+							}
+						}
+							
+						if(enemyBirdSwarmSprites[i].x < 0){
+							enemyBirdSwarmSprites[i].ttl = 0;//set as dead
+							tileEngine.removeObject(enemyBirdSwarmSprites[i]); //destroy the object
+						}
 					}
 				}
-
-				if(this.distanceFromNest <= 0 && playerHasWorm == 1)
+				
+				if(player.distanceFromNest <= 0 && playerHasWorm == 1)
 				{
 					//increment egg count
+					eggCountCurrent += 1;
+					eggCountRunning += 1;
 					
 					//drop the worm
 					playerHasWorm = 0;
 
 					//Reposition the worm
-					worm.ttl = 20000
-					tileEngine.addObject('worm');
+					worm.ttl = 999999;
+					worm.x = tileEngine.mapwidth - 100;
+					sprites.push(worm);
 
+					//Grow the map
 				}
-
+				
+				
 				sprites = sprites.filter(sprite => sprite.isAlive());
+				enemyBirdSwarmSprites = enemyBirdSwarmSprites.filter(sprite => sprite.isAlive());
 			},
 			render: function(){
 				tileEngine.renderLayer('background');
@@ -528,16 +512,32 @@ load(
 					}
 				}
 
+				//Helpful Messages/////////////////////////////////////
 				context.font = "30px Verdana";
 				// Create gradient
-				var gradient = context.createLinearGradient(0, canvas.width/4, canvas.width/2, 0);
+				var gradient = context.createLinearGradient(0, canvas.width/4, canvas.width - canvas.width/4, 0);
 				gradient.addColorStop("0"," magenta");
 				gradient.addColorStop("0.5", "blue");
 				gradient.addColorStop("1.0", "red");
 				// Fill with gradient
 				context.fillStyle = gradient;
-				context.fillText("Hit spacebar to flap your wings and bring the worm back to the nest!", 0, canvas.height/2);
-						
+				if(spacebarUsed == 0){
+				context.fillText("Hit spacebar to fly!", canvas.width/4, canvas.height/2);
+				context.fillText("Bring back a worm to produce an egg", canvas.width/8, canvas.height/1.8);
+				}
+
+				//egg count display/////////////////////////////////////////
+				var eggImg = imageAssets['Egg'];
+				context.drawImage(eggImg,0,0);
+				context.fillText(eggCountCurrent,64,64);
+				
+				if (eggCountCurrent == 0) {
+					//Game Over
+					context.fillText("GAME OVER!", canvas.width/4, canvas.height/2);
+					//Display egg score
+					context.fillText(eggCountRunning + " Eggs Produced ", canvas.width/4, canvas.height/1.5);
+					loop.stop();
+				}
 			}
 		});
 
@@ -587,3 +587,52 @@ function moveToNest(player){
 		return;
 	}
 }
+function makePlayerVulnerable(player){
+	player.isVulnerable = 1;
+}
+
+function spawnEnemyBirds(count, engine, spriteSheet,spriteArray){
+	
+	let enemyStartPositionX = engine.mapwidth;
+	let enemyBirdVectorXMin = -3.12;
+	let enemyBirdVectorXMax = -5.23;
+	let enemyBirdVectorYMin = 4.12;
+	let enemyBirdVectorYMax = 6.23;
+
+	for (var i = 0; i < count; i++){
+
+		rand = Math.random();
+		let randomSpeedX = Math.floor(rand * (enemyBirdVectorXMax - enemyBirdVectorXMin + i)) + enemyBirdVectorXMin;
+
+		rand = Math.random();
+		let randomSpeedY = Math.floor(rand * (enemyBirdVectorYMax - enemyBirdVectorYMin + i)) + enemyBirdVectorYMin;
+
+		let enemyBird = Sprite({
+			x:enemyStartPositionX,
+			y:canvas.height/2,
+			dx: randomSpeedX,
+			dy: randomSpeedY,
+			radius: 5,
+			anchor: {x: 0.5, y: 0.5},
+			collidesWith: sphereCollision,
+			animations: spriteSheet.animations
+		});
+		spriteArray.push(enemyBird)
+	}
+}
+
+//todo
+//Egg count at top DONE
+//Establish a ceiling DONE
+//flash screen red if bird hits you and make egg count decrement obvious, allow only one reduction per hit. 
+//Also animate an egg falling off the nest. Or could also have the eggs flying behind the bird.. 
+//End the game when the egg count hits 0. DONE
+//Restart game after game stops.
+//back to nest turnaround and reposition the worm DONE
+//Countdown at nest on first run
+//Enemy waves
+//Map generation
+//Scoring - I think this is just going to be a personal best of egg count.
+//Game start instructions DONE
+//sound
+//music
