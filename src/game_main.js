@@ -189,6 +189,7 @@ load(
 		//worm properties
 		let wormPositionX = 800;
 		let wormPositionY = 576;
+		let wormdt = 0; //Track time worm is carried, this is for enemy behavior.
 
 		//Swarm properties
 		let swoopRadians = 0;
@@ -407,9 +408,6 @@ load(
 				}
 			});
 		sprites.push(player);
-
-		//Enemy Bird Sprites
-		spawnEnemyBirds(swarmSize + eggCountRunning, tileEngine, birdEnemyFlappingSheet, enemyBirdSwarmSprites);
 	
 		//Chick Sprite
 		let chickSprite = Sprite({
@@ -440,6 +438,9 @@ load(
 				sprites.map(sprite => {
 						sprite.update()
 				});
+				enemyBirdSwarmSprites.map(sprite => {
+					sprite.update()
+				});
 
 				//tileEngine testing
 				if(player.x >= canvasWidthMid){
@@ -449,38 +450,21 @@ load(
 				}
 
 				if(worm.collidesWith(player)){
-					playerHasWorm = 1
-					worm.ttl = 0;
-					spawnEnemyBirds(swarmSize + eggCountRunning, tileEngine, birdEnemyFlappingSheet, enemyBirdSwarmSprites);
-				}
-				
-				//Enemy Logic //////////////////////////////////////////////////////////////
-				//Enemy birds
-				if (playerHasWorm == 1){
 					
-
-					for (var i = 0; i < enemyBirdSwarmSprites.length; i++){
-
-						swoopRadians += .0125
-						enemyBirdSwarmSprites[i].y = canvasHeightMid + ((canvas.height/4 + player.y/20) * Math.sin(swoopRadians));
-						enemyBirdSwarmSprites[i].update();
-						enemyBirdSwarmSprites[i].playAnimation('flapLeft');
-						//Collision detection
-						if(enemyBirdSwarmSprites[i].collidesWith(player)){
-							if (eggCountCurrent > 0 && player.isVulnerable == 1){
-								eggCountCurrent -= 1; // knock an egg off the nest
-								player.isVulnerable = 0;
-								setTimeout(makePlayerVulnerable(player),3000); //player is invulnerable for 3 seconds
-							}
-						}
-							
-						if(enemyBirdSwarmSprites[i].x < 0){
-							enemyBirdSwarmSprites[i].ttl = 0;//set as dead
-							tileEngine.removeObject(enemyBirdSwarmSprites[i]); //destroy the object
-						}
+					playerHasWorm = 1;
+					worm.ttl = 0;
+					
+				}
+				if (playerHasWorm == 1){
+					wormdt += 1/60;
+					//Release a bird every 1 second
+					if (wormdt > 1){
+						wormdt = 0;
+						spawnEnemyBirds(1, tileEngine, birdEnemyFlappingSheet, enemyBirdSwarmSprites);
 					}
 				}
-				
+
+				//Worm successfully brought back to nest event
 				if(player.distanceFromNest <= 0 && playerHasWorm == 1)
 				{
 					//increment egg count
@@ -489,6 +473,8 @@ load(
 					
 					//drop the worm
 					playerHasWorm = 0;
+					//reset worm time
+					wormdt = 0;
 
 					//Reposition the worm
 					worm.ttl = 999999;
@@ -497,20 +483,13 @@ load(
 
 					//Grow the map
 				}
-				
-				
 				sprites = sprites.filter(sprite => sprite.isAlive());
 				enemyBirdSwarmSprites = enemyBirdSwarmSprites.filter(sprite => sprite.isAlive());
 			},
 			render: function(){
 				tileEngine.renderLayer('background');
 				sprites.map(sprite => sprite.render()); //render each sprite
-
-				if(playerHasWorm == 1){
-					for (var i = 0; i < enemyBirdSwarmSprites.length; i++){
-						enemyBirdSwarmSprites[i].render();
-					}
-				}
+				enemyBirdSwarmSprites.map(sprite => sprite.render());//render enemy bird swarm
 
 				//Helpful Messages/////////////////////////////////////
 				context.font = "30px Verdana";
@@ -523,7 +502,7 @@ load(
 				context.fillStyle = gradient;
 				if(spacebarUsed == 0){
 				context.fillText("Hit spacebar to fly!", canvas.width/4, canvas.height/2);
-				context.fillText("Bring back a worm to produce an egg", canvas.width/8, canvas.height/1.8);
+				context.fillText("Bring back a worm to produce an egg", 30, canvas.height/1.8);
 				}
 
 				//egg count display/////////////////////////////////////////
@@ -535,7 +514,7 @@ load(
 					//Game Over
 					context.fillText("GAME OVER!", canvas.width/4, canvas.height/2);
 					//Display egg score
-					context.fillText(eggCountRunning + " Eggs Produced ", canvas.width/4, canvas.height/1.5);
+					context.fillText(" Eggs Produced: " + eggCountRunning , canvas.width/4, canvas.height/1.5);
 					loop.stop();
 				}
 			}
@@ -598,7 +577,6 @@ function spawnEnemyBirds(count, engine, spriteSheet,spriteArray){
 	let enemyBirdVectorXMax = -5.23;
 	let enemyBirdVectorYMin = 4.12;
 	let enemyBirdVectorYMax = 6.23;
-
 	for (var i = 0; i < count; i++){
 
 		rand = Math.random();
@@ -615,9 +593,31 @@ function spawnEnemyBirds(count, engine, spriteSheet,spriteArray){
 			radius: 5,
 			anchor: {x: 0.5, y: 0.5},
 			collidesWith: sphereCollision,
-			animations: spriteSheet.animations
+			animations: spriteSheet.animations,
+			update(){
+				
+				//swoopRadians += .0125
+					//this.y = this.y + ((canvas.height/4) * Math.sin(swoopRadians));
+					console.log("in update x: " + this.x + " y pos: " + this.y);
+					this.dy = 0
+					this.x -= 2
+					this.playAnimation('flapLeft');
+					//Collision detection
+					// if(enemyBirdSwarmSprites[i].collidesWith(player)){
+					// 	if (eggCountCurrent > 0 && player.isVulnerable == 1){
+					// 		eggCountCurrent -= 1; // knock an egg off the nest
+					// 		player.isVulnerable = 0;
+					// 	}
+					// }
+						
+					if(this.x < 0){
+						this.ttl = 0;//set as dead
+						engine.removeObject(this); //destroy the object
+					}
+			}
 		});
-		spriteArray.push(enemyBird)
+		spriteArray.push(enemyBird);
+		engine.addObject(enemyBird);
 	}
 }
 
