@@ -1,11 +1,6 @@
 
-
-// let {init, initKeys, setImagePath, load, on, imageAssets, TileEngine, 
-//      Sprite, SpriteSheet, Animation, keyPressed, Context, GameLoop} = kontra //create kontra objects
-
-import {init, initKeys, setImagePath, load, on, imageAssets, TileEngine, Sprite, SpriteSheet, Animation, keyPressed, Context, GameLoop} from 'https://cdn.jsdelivr.net/npm/kontra@6.5.0/kontra.min.mjs';
-
-
+let {init, initKeys, setImagePath, load, on, imageAssets, TileEngine, 
+     Sprite, SpriteSheet, Animation, keyPressed, Context, GameLoop} = kontra //create kontra objects
 let { canvas, context} = init();
 
 //Setup the screen
@@ -43,48 +38,7 @@ load(
 		//Start assigning files to objects ///////////////////////////////////////
 
 		//Base tile engine
-		let tileEngine = TileEngine({
-
-			// tile size
-			tilewidth: 64,
-			tileheight: 64,
-			//map size in tiles
-			width:2,
-			height:10,
-			//tileset object
-			tilesets: [{
-				firstgid: 1,
-				image: imageAssets['BackToTheNestMap']
-			}],
-			//layer object
-			layers:[{
-				name:'collision',
-				data:[0,0,
-					  0,0,
-					  0,0,
-					  0,0,
-					  0,0,
-					  0,0,
-					  0,0,
-					  0,0,
-					  0,0,
-					  2,2]
-				},
-				{
-				name:'background',
-				data:[1,1,
-					  1,1,
-					  1,1,
-					  4,1,
-					  1,1,
-					  1,1,
-					  1,4,
-					  1,1,
-					  1,6,
-					  2,2,]
-				
-			}]
-		});
+		let tileEngine = initMap();
 		
 
 		//Sprite sheets for animations ///////////////////////////////////////////////////////
@@ -194,6 +148,7 @@ load(
 		let eggCountMax = 0;
 		let eggCountCurrent = 0;
 		let spacebarUsed = 0;
+		let flapSoundFilter = 0;
 
 		//worm properties
 		let wormPositionX = tileEngine.mapwidth - 100;
@@ -243,94 +198,103 @@ load(
 				playerSpeed: 3.5,
 				isVulnerable:1,
 				update(){
-					this.distanceFromNest = this.x - playerStartPositionX; //update the distance from the nest
-					
-					//Determine any map collisions occuring. //////////////////////////////////////
-					this.hasCollision = tileEngine.layerCollidesWith('collision',player)
 
-					if (this.hasCollision == 1){
-						let aheadTile = 0;
-						let belowTile = 0;
+					if(this.hasEnemyCollision == 1){
+						//FREEZE the player
+						this.dx = 0; // halt forward movement.
+						this.playerState = 'idleRight'; //freeze
 
-						belowTile = tileEngine.tileAtLayer('collision', {x: player.x, y: player.y + 36})
-
-						if (playerHasWorm == 0){
-							aheadTile = tileEngine.tileAtLayer('collision', {x: (player.x + 36), y: player.y})
-						}else{
-							aheadTile = tileEngine.tileAtLayer('collision', {x: (player.x - 36), y: player.y})
-						}
-
-						if(aheadTile > 0){
-							this.hasForwardCollision = 1;
-						}
-
-						if(belowTile > 0){
-							this.hasDownwardCollision = 1;
-						}
 					}else{
-						this.hasForwardCollision = 0;
-						this.hasDownwardCollision = 0;
-					}
-
-					if(this.hasForwardCollision == 1){
-						this.dx = 0 // halt forward movement.
-					}
-
-					//move player toward worm until obtained and then go back to the nest.
-					if(playerHasWorm == 0 && this.hasForwardCollision == 0){
-						moveToWorm(player,worm);
-					}
-					else if (playerHasWorm == 1 && this.hasForwardCollision == 0){
-						moveToNest(player);
-					}
-
-					//space to flap
-					if (keyPressed('space')){
-
-						//Upward movement
-						this.y -= 5 //Boost upward
-						this.ddy = -gravity; //Reverse gravity
-						spacebarUsed = 1;
+						this.distanceFromNest = this.x - playerStartPositionX; //update the distance from the nest
 						
-						//flap toward worm
-						if (this.hasForwardCollision == 0 && playerHasWorm == 0){
-							moveToWorm(player,worm);
-							this.playerState = 'FlapRight'
-						}
+						//Determine any map collisions occuring. //////////////////////////////////////
+						this.hasCollision = tileEngine.layerCollidesWith('collision',player)
 
-						//flap toward nest
-						if(this.hasForwardCollision == 0 && playerHasWorm == 1){
-							moveToNest(player);
-							this.playerState = 'FlapWormLeft'
-						}
+						if (this.hasCollision == 1){
+							let aheadTile = 0;
+							let belowTile = 0;
 
-					}else{
-						//Gliding
-						this.ddy = gravity;
-						if (this.y < floor && playerHasWorm == 0){
-							this.playerState = 'GlideRight';
-						}else if(this.y < floor && playerHasWorm == 1){
-							this.playerState = 'GlideWormLeft';
-						}
-					}
+							belowTile = tileEngine.tileAtLayer('collision', {x: player.x, y: player.y + 36})
 
-					//player hopping along ground, set gravity to zero
-					if(this.y > (floor - 36) && keyPressed('space') == false) //36 to adjust for foot position of sprite
-					{
-						this.y = (floor - 36);
-						this.ddy = 0;
-
-						if(playerHasWorm == 1){
-								this.playerState = 'HopWormLeft';
+							if (playerHasWorm == 0){
+								aheadTile = tileEngine.tileAtLayer('collision', {x: (player.x + 36), y: player.y})
 							}else{
-								this.playerState = 'HopRight';
+								aheadTile = tileEngine.tileAtLayer('collision', {x: (player.x - 36), y: player.y})
 							}
-					}
 
-					//celing boundary
-					if(this.y < 0)
-					{
-						this.y = 0;
+							if(aheadTile > 0){
+								this.hasForwardCollision = 1;
+							}
+
+							if(belowTile > 0){
+								this.hasDownwardCollision = 1;
+							}
+						}else{
+							this.hasForwardCollision = 0;
+							this.hasDownwardCollision = 0;
+						}
+
+						if(this.hasForwardCollision == 1){
+							this.dx = 0 // halt forward movement.
+						}
+						
+						//move player toward worm until obtained and then go back to the nest.
+						if(playerHasWorm == 0 && this.hasForwardCollision == 0){
+							moveToWorm(player,worm);
+						}
+						else if (playerHasWorm == 1 && this.hasForwardCollision == 0){
+							moveToNest(player);
+						}
+
+						//space to flap
+						if (keyPressed('space')){
+
+							//Upward movement
+							this.y -= 5 //Boost upward
+							this.ddy = -gravity; //Reverse gravity
+							spacebarUsed = 1;
+
+							
+							//flap toward worm
+							if (this.hasForwardCollision == 0 && playerHasWorm == 0){
+								moveToWorm(player,worm);
+								this.playerState = 'FlapRight'
+							}
+
+							//flap toward nest
+							if(this.hasForwardCollision == 0 && playerHasWorm == 1){
+								moveToNest(player);
+								this.playerState = 'FlapWormLeft'
+							}
+
+						}else{
+							//Gliding
+							this.ddy = gravity;
+							if (this.y < floor && playerHasWorm == 0){
+								this.playerState = 'GlideRight';
+							}else if(this.y < floor && playerHasWorm == 1){
+								this.playerState = 'GlideWormLeft';
+							}
+						}
+
+						//player hopping along ground, set gravity to zero
+						if(this.y > (floor - 36) && keyPressed('space') == false) //36 to adjust for foot position of sprite
+						{
+							this.y = (floor - 36);
+							this.ddy = 0;
+
+							if(playerHasWorm == 1){
+									this.playerState = 'HopWormLeft';
+								}else{
+									this.playerState = 'HopRight';
+								}
+						}
+
+						//celing boundary
+						if(this.y < 0)
+						{
+							this.y = 0;
+						}
 					}
 					
 					//Determine animation to play
@@ -427,65 +391,107 @@ load(
 					sprite.playAnimation('flapLeft');
 				});
 
-				//Screen Traversal
-				if(player.x >= canvas.width/2){
-					tileEngine.sx += player.playerSpeed;
-				}else if (playerHasWorm == 1) {
+				if (player.hasEnemyCollision == 1){
 
-					tileEngine.sx += -player.playerSpeed*2
-					console.log(tileEngine.sx);
-				}
+					player.playerHasWorm = 0;
 
-				if(worm.collidesWith(player)){
-					
-					playerHasWorm = 1;
-					worm.ttl = 0;
-					
-				}
+					if(keyPressed('enter')){
+						//reset the game
+						
+						
+						//reset current egg count
+						eggCountCurrent = 0;
 
-				if (playerHasWorm == 1){
-					wormdt += 1/60;
-					//Release a bird every 1 second
-					if (wormdt > 1){
+						//Tear down enemies
+						enemyBirdSwarmSprites.map(sprite => {
+							sprite.ttl = 0;
+							tileEngine.removeObject(sprite);
+						});
+
+						//reset map
+						tileEngine = initMap();
+						tileEngine = addChunkToMap(tileEngine);
+						player.x = playerStartPositionX;
+						player.y = playerStartPositionY;
+						player.playerHasWorm = 0;
+
+						//Reposition the worm
+						worm.ttl = 999999;
+						worm.x = tileEngine.mapwidth - 100;
+						sprites.push(worm);
+
+						//Re-Sync Objects
+						for (var i = 0; i < sprites.length; i ++){
+							tileEngine.addObject(sprites[i]);
+						}
+
+						//player enemy collision
+						player.hasEnemyCollision = 0;
+						
+					}
+				}else{
+
+				
+
+					//Screen Traversal
+					if(player.x >= canvas.width/2 && playerHasWorm == 0){
+						tileEngine.sx = player.x - 320;
+					}else if (playerHasWorm == 1) {
+
+						tileEngine.sx = player.x - 320
+					}
+
+					if(worm.collidesWith(player)){
+						
+						playerHasWorm = 1;
+						worm.ttl = 0;
+						
+					}
+
+					if (playerHasWorm == 1){
+						wormdt += 1/60;
+						//Release a bird every 1 second
+						if (wormdt > 1){
+							wormdt = 0;
+							spawnEnemyBird(tileEngine, birdEnemyFlappingSheet, enemyBirdSwarmSprites);
+						}
+					}
+
+					//Worm successfully brought back to nest event
+					if(player.distanceFromNest <= 0 && playerHasWorm == 1)
+					{
+						//increment egg count
+						eggCountCurrent += 1;
+						if (eggCountCurrent > eggCountMax){
+							eggCountMax += 1;
+						}
+						
+						
+						//drop the worm
+						playerHasWorm = 0;
+						//reset worm time
 						wormdt = 0;
-						spawnEnemyBird(tileEngine, birdEnemyFlappingSheet, enemyBirdSwarmSprites);
+
+						//Grow the map
+						tileEngine = addChunkToMap(tileEngine);
+
+						//Reposition the worm
+						worm.ttl = 999999;
+						worm.x = tileEngine.mapwidth - 100;
+						sprites.push(worm);
+
+						//Re-Sync Objects
+						for (var i = 0; i < sprites.length; i ++){
+							tileEngine.addObject(sprites[i]);
+						}
+						for (var i = 0; i < enemyBirdSwarmSprites.length; i ++){
+							tileEngine.addObject(enemyBirdSwarmSprites[i]);
+						}
+						
 					}
+					sprites = sprites.filter(sprite => sprite.isAlive());
+					enemyBirdSwarmSprites = enemyBirdSwarmSprites.filter(sprite => sprite.isAlive());
 				}
-
-				//Worm successfully brought back to nest event
-				if(player.distanceFromNest <= 0 && playerHasWorm == 1)
-				{
-					//increment egg count
-					eggCountCurrent += 1;
-					if (eggCountCurrent > eggCountMax){
-						eggCountMax += 1;
-					}
-					
-					
-					//drop the worm
-					playerHasWorm = 0;
-					//reset worm time
-					wormdt = 0;
-
-					//Grow the map
-					tileEngine = addChunkToMap(tileEngine);
-
-					//Reposition the worm
-					worm.ttl = 999999;
-					worm.x = tileEngine.mapwidth - 100;
-					sprites.push(worm);
-
-					//Re-Sync Objects
-					for (var i = 0; i < sprites.length; i ++){
-						tileEngine.addObject(sprites[i]);
-					}
-					for (var i = 0; i < enemyBirdSwarmSprites.length; i ++){
-						tileEngine.addObject(enemyBirdSwarmSprites[i]);
-					}
-					
-				}
-				sprites = sprites.filter(sprite => sprite.isAlive());
-				enemyBirdSwarmSprites = enemyBirdSwarmSprites.filter(sprite => sprite.isAlive());
 			},
 			render: function(){
 				tileEngine.renderLayer('background');
@@ -511,24 +517,21 @@ load(
 					context.fillText("GAME OVER!", canvas.width/4, canvas.height/2);
 					//Display egg score
 					context.fillText("Hit enter to continue", canvas.width/4, canvas.height/1.5);
-					loop.stop();
 				}
 
 				//egg count display/////////////////////////////////////////
 				var eggImg = imageAssets['Egg'];
 				context.drawImage(eggImg,0,0);
 				context.fillText(eggCountCurrent,64,64);
+
+				var eggImg = imageAssets['Egg'];
+				context.drawImage(eggImg,350,0);
+				context.fillText("High Score: " + eggCountMax,400,64);
 			}
 		});
 
 
 		loop.start();
-
-		
-		if (loop.isStopped && keyPressed('enter')){
-			loop.start();
-			console.log("Enter heard, loop is stopped: " + loop.isStopped)
-		}
 
 	});
 
@@ -575,8 +578,8 @@ function moveToNest(player){
 
 function spawnEnemyBird(engine, spriteSheet,spriteArray){
 	
-	let enemyBirdVectorXMin = -3.12;
-	let enemyBirdVectorXMax = -5.23;
+	let enemyBirdVectorXMin = -4.12 - (engine.width/2);
+	let enemyBirdVectorXMax = -9.23 - (engine.width);
 	let enemyBirdVectorYMin = 4.12;
 	let enemyBirdVectorYMax = 6.23;
 	rand = Math.random();
@@ -591,7 +594,7 @@ function spawnEnemyBird(engine, spriteSheet,spriteArray){
 	let enemyBird = Sprite({
 		x:enemyStartPositionX,
 		y:enemyStartPositionY,
-		dx: randomSpeedX,
+		dx: randomSpeedX, //this isnt working but I actually like the outcome. Happy accident.
 		dy: randomSpeedY,
 		swoopRadians: 0,
 		radius: 5,
@@ -602,9 +605,10 @@ function spawnEnemyBird(engine, spriteSheet,spriteArray){
 			
 			this.swoopRadians += .0125
 			this.y = enemyStartPositionY + ((canvas.height/4) * Math.sin(this.swoopRadians));
-			console.log("in update x: " + this.x + " y pos: " + this.y + " swoop radians: " + this.swoopRadians);
 			this.dy = 0
-			this.x -= 2
+			if(engine.width > 25){ //darting birds
+			this.x += randomSpeedX;
+			}
 			//Collision detection
 			if(this.collidesWith(player)){
 				player.hasEnemyCollision = 1;
@@ -616,6 +620,7 @@ function spawnEnemyBird(engine, spriteSheet,spriteArray){
 			}
 		}
 	});
+	enemyBird.playAnimation('flapLeft');
 	spriteArray.push(enemyBird);
 	engine.addObject(enemyBird);
 	
@@ -627,6 +632,9 @@ function addChunkToMap(tileEngine){
 	let thisBackgroundCurrentPosition = 0;
 	let thisBackgroundWidth = tileEngine.width;
 	let nextBackground = [];
+	let obstacleTypes = [1,3,5];
+	let skyTypes = [1,1,1,1,1,1,4];
+	let randomPosition = 0;
 
 	//append to existing map
 	for(var row = 0; row < 10; row++){
@@ -642,9 +650,17 @@ function addChunkToMap(tileEngine){
 
 			//8 columns
 			if(row == 9){
+				//Ground level
 				nextBackground.push(2);
-			}else{
-				nextBackground.push(1);
+			}else if (row == 8){
+				//obstacle layer
+				randomPosition = Math.floor(Math.random() * 3);
+				nextBackground.push(obstacleTypes[randomPosition]);
+			}
+			else{
+				//skylayer
+				randomPosition = Math.floor(Math.random() * 7);
+				nextBackground.push(skyTypes[randomPosition]);
 			}
 		}
 	}
@@ -690,21 +706,55 @@ function addChunkToMap(tileEngine){
 		}]
 	});
 
+	//Ensure worm is on a sky tile
+	tileEngine.setTileAtLayer('background', {x: tileEngine.mapwidth - 100, y: 550 }, 1) 
+	tileEngine.setTileAtLayer('collision', {x: tileEngine.mapwidth - 100, y: 550 }, 0) 
 	return tileEngine;
 }
 
-//todo
-//Egg count at top DONE
-//Establish a ceiling DONE
-//Instead of complicating with egg reduction, just going to make it a one hit and you have to restart affair. DONE
-//back to nest turnaround and reposition the worm DONE
-//Enemy waves DONE
-//Game start instructions DONE
-//Map generation Almost Done need to randomize clouds and obstacles, should be easy.
-//Scoring - I think this is just going to be a personal best of egg count. Just need to display best on top right.
-//Restart game after game stops. In progress
-//Fix camera movement
-//sound
-//music
-//Library recompile
-//minify
+function initMap(){
+	let tileEngine = TileEngine({
+
+		// tile size
+		tilewidth: 64,
+		tileheight: 64,
+		//map size in tiles
+		width:2,
+		height:10,
+		//tileset object
+		tilesets: [{
+			firstgid: 1,
+			image: imageAssets['BackToTheNestMap']
+		}],
+		//layer object
+		layers:[{
+			name:'collision',
+			data:[0,0,
+				  0,0,
+				  0,0,
+				  0,0,
+				  0,0,
+				  0,0,
+				  0,0,
+				  0,0,
+				  0,0,
+				  2,2]
+			},
+			{
+			name:'background',
+			data:[1,1,
+				  1,1,
+				  1,1,
+				  4,1,
+				  1,1,
+				  1,1,
+				  1,4,
+				  1,1,
+				  1,6,
+				  2,2,]
+			
+		}]
+	});
+	return tileEngine;
+}
+
