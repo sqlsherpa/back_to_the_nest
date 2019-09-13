@@ -37,14 +37,16 @@ load(
 	).then(function(assets){
 		console.log("All Assets Successfully Loaded.");
 
-		//Start assigning files to objects
+		//Start assigning files to objects ///////////////////////////////////////
+
+		//Base tile engine
 		let tileEngine = TileEngine({
 
 			// tile size
 			tilewidth: 64,
 			tileheight: 64,
 			//map size in tiles
-			width:14,
+			width:2,
 			height:10,
 			//tileset object
 			tilesets: [{
@@ -54,32 +56,33 @@ load(
 			//layer object
 			layers:[{
 				name:'collision',
-				data:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-					  0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-					  0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-					  0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-					  0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-					  0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-					  0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-					  0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-					  0,0,0,0,3,0,5,3,3,0,0,0,0,0,
-					  2,2,2,2,2,2,2,2,2,2,2,2,2,2]
+				data:[0,0,
+					  0,0,
+					  0,0,
+					  0,0,
+					  0,0,
+					  0,0,
+					  0,0,
+					  0,0,
+					  0,0,
+					  2,2]
 				},
 				{
 				name:'background',
-				data:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-					  1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-					  1,1,1,1,1,1,4,1,1,1,1,1,1,1,
-					  4,1,1,1,1,1,1,1,1,1,1,1,1,1,
-					  1,1,4,1,1,1,1,1,4,1,1,1,1,1,
-					  1,1,1,1,1,4,1,1,1,1,1,1,1,1,
-					  1,4,1,1,1,1,1,1,1,1,1,1,1,1,
-					  1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-					  1,6,1,1,3,1,5,3,3,1,1,1,1,1,
-					  2,2,2,2,2,2,2,2,2,2,2,2,2,2]
+				data:[1,1,
+					  1,1,
+					  1,1,
+					  4,1,
+					  1,1,
+					  1,1,
+					  1,4,
+					  1,1,
+					  1,6,
+					  2,2,]
 				
 			}]
 		});
+		
 
 		//Sprite sheets for animations ///////////////////////////////////////////////////////
 		let motherBirdFlappingSheet = SpriteSheet({
@@ -174,6 +177,9 @@ load(
 				}
 			}
 		});
+		 
+		//Initial Chunk Append /////////////////////////////////////////////////////////////////////////
+		tileEngine = addChunkToMap(tileEngine);
 
 		//Initial Properties ///////////////////////////////////////////////////////////////////////////
 		//player properties
@@ -182,18 +188,16 @@ load(
 		let playerHasWorm = 0;
 		let gravity = .05;
 		let floor = 576;
-		let eggCountRunning = 0;
-		let eggCountCurrent = 1;
+		let eggCountMax = 0;
+		let eggCountCurrent = 0;
 		let spacebarUsed = 0;
 
 		//worm properties
-		let wormPositionX = 800;
+		let wormPositionX = tileEngine.mapwidth - 100;
 		let wormPositionY = 576;
 		let wormdt = 0; //Track time worm is carried, this is for enemy behavior.
 
 		//Swarm properties
-		let swoopRadians = 0;
-		let swarmSize = 1; //This is the starting bird, but this will increase as the worm distance increases.
 		let enemyBirdSwarmSprites = [];
 
 		//Initialize sprites/////////////////////////////////////////////////////////////////
@@ -208,14 +212,6 @@ load(
 			});
 		sprites.push(worm);
 
-		let egg4 = Sprite({
-				x:87,
-				y:475,
-				image: imageAssets['Egg'],
-				anchor: {x: 0.5, y: 0.5}
-			});
-		sprites.push(egg4);
-
 		let egg = Sprite({
 				x:80,
 				y:485,
@@ -223,22 +219,6 @@ load(
 				anchor: {x: 0.5, y: 0.5}
 			});
 		sprites.push(egg);
-
-		let egg2 = Sprite({
-				x:85,
-				y:485,
-				image: imageAssets['Egg'],
-				anchor: {x: 0.5, y: 0.5}
-			});
-		sprites.push(egg2);
-
-		let egg3 = Sprite({
-				x:90,
-				y:485,
-				image: imageAssets['Egg'],
-				anchor: {x: 0.5, y: 0.5}
-			});
-		sprites.push(egg3);
 
 		//Player Mother Bird Sprite
 		let player = Sprite({
@@ -255,6 +235,7 @@ load(
 				hasForwardCollision: 0,
 				hasDownwardCollision: 0,
 				hasCollision: 0,
+				hasEnemyCollision: 0,
 				distanceFromNest: 0,
 				playerSpeed: 3.5,
 				isVulnerable:1,
@@ -439,14 +420,17 @@ load(
 						sprite.update()
 				});
 				enemyBirdSwarmSprites.map(sprite => {
-					sprite.update()
+					sprite.update(player)
+					sprite.playAnimation('flapLeft');
 				});
 
-				//tileEngine testing
-				if(player.x >= canvasWidthMid){
+				//Screen Traversal
+				if(player.x >= canvas.width/2){
 					tileEngine.sx += player.playerSpeed;
 				}else if (playerHasWorm == 1) {
-					tileEngine.sx -= player.playerSpeed;
+
+					tileEngine.sx += -player.playerSpeed*2
+					console.log(tileEngine.sx);
 				}
 
 				if(worm.collidesWith(player)){
@@ -455,12 +439,13 @@ load(
 					worm.ttl = 0;
 					
 				}
+
 				if (playerHasWorm == 1){
 					wormdt += 1/60;
 					//Release a bird every 1 second
 					if (wormdt > 1){
 						wormdt = 0;
-						spawnEnemyBirds(1, tileEngine, birdEnemyFlappingSheet, enemyBirdSwarmSprites);
+						spawnEnemyBird(tileEngine, birdEnemyFlappingSheet, enemyBirdSwarmSprites);
 					}
 				}
 
@@ -469,19 +454,32 @@ load(
 				{
 					//increment egg count
 					eggCountCurrent += 1;
-					eggCountRunning += 1;
+					if (eggCountCurrent > eggCountMax){
+						eggCountMax += 1;
+					}
+					
 					
 					//drop the worm
 					playerHasWorm = 0;
 					//reset worm time
 					wormdt = 0;
 
+					//Grow the map
+					tileEngine = addChunkToMap(tileEngine);
+
 					//Reposition the worm
 					worm.ttl = 999999;
 					worm.x = tileEngine.mapwidth - 100;
 					sprites.push(worm);
 
-					//Grow the map
+					//Re-Sync Objects
+					for (var i = 0; i < sprites.length; i ++){
+						tileEngine.addObject(sprites[i]);
+					}
+					for (var i = 0; i < enemyBirdSwarmSprites.length; i ++){
+						tileEngine.addObject(enemyBirdSwarmSprites[i]);
+					}
+					
 				}
 				sprites = sprites.filter(sprite => sprite.isAlive());
 				enemyBirdSwarmSprites = enemyBirdSwarmSprites.filter(sprite => sprite.isAlive());
@@ -505,24 +503,29 @@ load(
 				context.fillText("Bring back a worm to produce an egg", 30, canvas.height/1.8);
 				}
 
+				if (player.hasEnemyCollision == 1){
+					//Game Over
+					context.fillText("GAME OVER!", canvas.width/4, canvas.height/2);
+					//Display egg score
+					context.fillText("Hit enter to continue", canvas.width/4, canvas.height/1.5);
+					loop.stop();
+				}
+
 				//egg count display/////////////////////////////////////////
 				var eggImg = imageAssets['Egg'];
 				context.drawImage(eggImg,0,0);
 				context.fillText(eggCountCurrent,64,64);
-				
-				if (eggCountCurrent == 0) {
-					//Game Over
-					context.fillText("GAME OVER!", canvas.width/4, canvas.height/2);
-					//Display egg score
-					context.fillText(" Eggs Produced: " + eggCountRunning , canvas.width/4, canvas.height/1.5);
-					loop.stop();
-				}
 			}
 		});
 
 
 		loop.start();
 
+		
+		if (loop.isStopped && keyPressed('enter')){
+			loop.start();
+			console.log("Enter heard, loop is stopped: " + loop.isStopped)
+		}
 
 	});
 
@@ -566,73 +569,139 @@ function moveToNest(player){
 		return;
 	}
 }
-function makePlayerVulnerable(player){
-	player.isVulnerable = 1;
-}
 
-function spawnEnemyBirds(count, engine, spriteSheet,spriteArray){
+function spawnEnemyBird(engine, spriteSheet,spriteArray){
 	
-	let enemyStartPositionX = engine.mapwidth;
 	let enemyBirdVectorXMin = -3.12;
 	let enemyBirdVectorXMax = -5.23;
 	let enemyBirdVectorYMin = 4.12;
 	let enemyBirdVectorYMax = 6.23;
-	for (var i = 0; i < count; i++){
+	rand = Math.random();
+	let randomSpeedX = Math.floor(rand * (enemyBirdVectorXMax - enemyBirdVectorXMin + 1)) + enemyBirdVectorXMin;
 
-		rand = Math.random();
-		let randomSpeedX = Math.floor(rand * (enemyBirdVectorXMax - enemyBirdVectorXMin + i)) + enemyBirdVectorXMin;
+	rand = Math.random();
+	let randomSpeedY = Math.floor(rand * (enemyBirdVectorYMax - enemyBirdVectorYMin + 1)) + enemyBirdVectorYMin;
 
-		rand = Math.random();
-		let randomSpeedY = Math.floor(rand * (enemyBirdVectorYMax - enemyBirdVectorYMin + i)) + enemyBirdVectorYMin;
+	let enemyStartPositionX = engine.mapwidth;
+	let enemyStartPositionY = Math.floor(rand * ((canvas.height - canvas.height/4) - canvas.height/4)) + canvas.height/4;
 
-		let enemyBird = Sprite({
-			x:enemyStartPositionX,
-			y:canvas.height/2,
-			dx: randomSpeedX,
-			dy: randomSpeedY,
-			radius: 5,
-			anchor: {x: 0.5, y: 0.5},
-			collidesWith: sphereCollision,
-			animations: spriteSheet.animations,
-			update(){
-				
-				//swoopRadians += .0125
-					//this.y = this.y + ((canvas.height/4) * Math.sin(swoopRadians));
-					console.log("in update x: " + this.x + " y pos: " + this.y);
-					this.dy = 0
-					this.x -= 2
-					this.playAnimation('flapLeft');
-					//Collision detection
-					// if(enemyBirdSwarmSprites[i].collidesWith(player)){
-					// 	if (eggCountCurrent > 0 && player.isVulnerable == 1){
-					// 		eggCountCurrent -= 1; // knock an egg off the nest
-					// 		player.isVulnerable = 0;
-					// 	}
-					// }
-						
-					if(this.x < 0){
-						this.ttl = 0;//set as dead
-						engine.removeObject(this); //destroy the object
-					}
+	let enemyBird = Sprite({
+		x:enemyStartPositionX,
+		y:enemyStartPositionY,
+		dx: randomSpeedX,
+		dy: randomSpeedY,
+		swoopRadians: 0,
+		radius: 5,
+		anchor: {x: 0.5, y: 0.5},
+		collidesWith: sphereCollision,
+		animations: spriteSheet.animations,
+		update(player){
+			
+			this.swoopRadians += .0125
+			this.y = enemyStartPositionY + ((canvas.height/4) * Math.sin(this.swoopRadians));
+			console.log("in update x: " + this.x + " y pos: " + this.y + " swoop radians: " + this.swoopRadians);
+			this.dy = 0
+			this.x -= 2
+			//Collision detection
+			if(this.collidesWith(player)){
+				player.hasEnemyCollision = 1;
 			}
-		});
-		spriteArray.push(enemyBird);
-		engine.addObject(enemyBird);
+				
+			if(this.x < 0){
+				this.ttl = 0;//set as dead
+				engine.removeObject(this); //destroy the object
+			}
+		}
+	});
+	spriteArray.push(enemyBird);
+	engine.addObject(enemyBird);
+	
+}
+
+function addChunkToMap(tileEngine){
+	//Try to append a "block" of background
+	let thisBackground = tileEngine.layers[1]['data'];
+	let thisBackgroundCurrentPosition = 0;
+	let thisBackgroundWidth = tileEngine.width;
+	let nextBackground = [];
+
+	//append to existing map
+	for(var row = 0; row < 10; row++){
+
+		//feed existing map in
+		for(var col = 0; col < thisBackgroundWidth; col++){
+			
+			nextBackground.push(thisBackground[thisBackgroundCurrentPosition]); 
+			thisBackgroundCurrentPosition += 1;
+		}
+		//Append
+		for(var col = 0; col < 8; col++){
+
+			//8 columns
+			if(row == 9){
+				nextBackground.push(2);
+			}else{
+				nextBackground.push(1);
+			}
+		}
 	}
+
+	let collisionBackgroundTransform = nextBackground;
+	collisionBackgroundTransform = collisionBackgroundTransform.map( function(tile) {
+		if(tile < 2){
+			return 0;
+		}
+		if(tile == 4){
+			return 0;
+		}
+		else{
+			return tile;
+		}
+	});
+
+	thisBackgroundWidth = (thisBackgroundCurrentPosition + 80)/10
+
+	//apparently I have to replace the entire tile engine
+	tileEngine = TileEngine({
+
+		// tile size
+		tilewidth: 64,
+		tileheight: 64,
+		//map size in tiles
+		width:thisBackgroundWidth,
+		height:10,
+		//tileset object
+		tilesets: [{
+			firstgid: 1,
+			image: imageAssets['BackToTheNestMap']
+		}],
+		//layer object
+		layers:[{
+			name:'collision',
+			data:collisionBackgroundTransform
+			},
+			{
+			name:'background',
+			data:nextBackground
+			
+		}]
+	});
+
+	return tileEngine;
 }
 
 //todo
 //Egg count at top DONE
 //Establish a ceiling DONE
-//flash screen red if bird hits you and make egg count decrement obvious, allow only one reduction per hit. 
-//Also animate an egg falling off the nest. Or could also have the eggs flying behind the bird.. 
-//End the game when the egg count hits 0. DONE
-//Restart game after game stops.
+//Instead of complicating with egg reduction, just going to make it a one hit and you have to restart affair. DONE
 //back to nest turnaround and reposition the worm DONE
-//Countdown at nest on first run
-//Enemy waves
-//Map generation
-//Scoring - I think this is just going to be a personal best of egg count.
+//Enemy waves DONE
 //Game start instructions DONE
+//Map generation Almost Done need to randomize clouds and obstacles, should be easy.
+//Scoring - I think this is just going to be a personal best of egg count. Just need to display best on top right.
+//Restart game after game stops. In progress
+//Fix camera movement
 //sound
 //music
+//Library recompile
+//minify
