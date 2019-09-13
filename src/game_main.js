@@ -1,8 +1,6 @@
 
-
 let {init, initKeys, setImagePath, load, on, imageAssets, TileEngine, 
      Sprite, SpriteSheet, Animation, keyPressed, Context, GameLoop} = kontra //create kontra objects
-
 let { canvas, context} = init();
 
 //Setup the screen
