@@ -1,7 +1,10 @@
 
 
-let {init, initKeys, setImagePath, load, on, imageAssets, TileEngine, 
-     Sprite, SpriteSheet, Animation, keyPressed, Context, GameLoop} = kontra //create kontra objects
+// let {init, initKeys, setImagePath, load, on, imageAssets, TileEngine, 
+//      Sprite, SpriteSheet, Animation, keyPressed, Context, GameLoop} = kontra //create kontra objects
+
+import {init, initKeys, setImagePath, load, on, imageAssets, TileEngine, Sprite, SpriteSheet, Animation, keyPressed, Context, GameLoop} from 'https://cdn.jsdelivr.net/npm/kontra@6.5.0/kontra.min.mjs';
+
 
 let { canvas, context} = init();
 
